@@ -2,6 +2,7 @@ import torch
 
 torch.set_grad_enabled(False)
 
+from einops import rearrange
 from tqdm import tqdm
 
 from rave import RAVE
@@ -23,11 +24,13 @@ class args(Config):
     CKPT = None  # PATH TO YOUR PRETRAINED CHECKPOINT
     WAV_FOLDER = None  # PATH TO YOUR WAV FOLDER
     OUT = "./reconstruction/"
-    CACHED = True
+    BLOCK_SIZE = None
+    HOP_SIZE = None
+    WINDOW = False
 
+cc.use_cached_conv(True)
 
 args.parse_args()
-cc.use_cached_conv(args.CACHED)
 
 # GPU DISCOVERY
 CUDA = gpu.getAvailable(maxMemory=.05)
@@ -78,9 +81,41 @@ for audio in audios:
     pad = (ratio - (n_sample % ratio)) % ratio
     x = torch.nn.functional.pad(x, (0, pad))
 
-    # ENCODE / DECODE
-    y = rave.decode(rave.encode(x))
+    # Block-based processing
+    block_size = int(args.BLOCK_SIZE) if args.BLOCK_SIZE is not None else x.shape[-1]
+    hop_size = int(args.HOP_SIZE) if args.HOP_SIZE is not None else block_size
+
+    # Pad the start of the audio if the block size is larger than the hop size
+    # This simulates a causal processing of the audio
+    if block_size > hop_size:
+        pad = block_size - hop_size
+        x = torch.nn.functional.pad(x, (pad, 0))
+    elif hop_size > block_size:
+        assert hop_size % block_size == 0, "Hop size must be a multiple of the block size."
+
+    x = x.unsqueeze(1)
+    blocks = torch.nn.functional.unfold(x, (1, block_size), stride=(1, hop_size))
+    blocks = rearrange(blocks, 'b w t -> t b 1 w')
+
+    y = []
+    for block in blocks:
+        out = rave.decode(rave.encode(block))
+        y.append(out)
+    
+    # need to overlap and add
+    if hop_size < ratio:
+        y = torch.cat(y, dim=1)
+        y = rearrange(y, 'b t f -> b f t')
+        if args.WINDOW:
+            y = y * torch.hann_window(y.shape[1], device=y.device)[None, :, None]
+
+        out_size = hop_size * (blocks.shape[0] - 1) + block_size
+        y = torch.nn.functional.fold(y, (1, out_size), kernel_size=(1, 2048), stride=(1, hop_size))
+        y = y.squeeze(2)
+    else:
+        y = torch.cat(y, dim=-1)
+
     y = y.reshape(-1).cpu().numpy()[:n_sample]
 
     # WRITE AUDIO
-    sf.write(path.join(args.OUT, f"{audio_name}_reconstruction.wav"), y, sr)
+    sf.write(path.join(args.OUT, f"{audio_name}_reconstruction_b{block_size}_h{hop_size}.wav"), y, sr)
