@@ -30,6 +30,7 @@ if __name__ == "__main__":
             default=[4, 4, 4, 2],
             small=[4, 4, 4, 2],
             large=[4, 4, 2, 2, 2],
+            lhnas=[2, 2, 2, 2],
         )
 
         MIN_KL = 1e-1

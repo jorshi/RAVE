@@ -4,6 +4,7 @@ from effortless_config import Config, setting
 import numpy as np
 import soundfile as sf
 import torch
+from torch.utils.data import random_split
 from udls import SimpleDataset, simple_audio_preprocess
 from udls.transforms import Compose, RandomApply, Dequantize, RandomCrop
 
@@ -16,6 +17,7 @@ if __name__ == "__main__":
         WAV = None
         SR = 48000
         N_SIGNAL = 65536
+        TRAIN_SPLIT = False
     
     args.parse_args()
 
@@ -40,6 +42,16 @@ if __name__ == "__main__":
             lambda x: x.astype(np.float32),
         ]),
     )
+
+    if args.TRAIN_SPLIT:
+        val = max((2 * len(dataset)) // 100, 1)
+        train = len(dataset) - val
+        train, val = random_split(
+            dataset,
+            [train, val],
+            generator=torch.Generator().manual_seed(42),
+        )
+        dataset = train
 
     outdir = Path(args.PREPROCESSED)
     for i, x in enumerate(dataset):

@@ -53,10 +53,10 @@ if __name__ == "__main__":
     multiband_number = input("multiband number (defaults to 16): ")
     n_signal = input("training example duration (defaults to 65536 samples): ")
 
-    configurations = ["default", "small", "large"]
+    configurations = ["default", "small", "large", "lhnas"]
     configuration = ""
     while not configuration:
-        conf = input("configuration (default, small, large): ")
+        conf = input("configuration (default, small, large, lhnas): ")
         if conf in configurations:
             configuration = conf
         else:

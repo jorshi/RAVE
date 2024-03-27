@@ -63,8 +63,9 @@ makedirs(args.OUT, exist_ok=True)
 for audio in audios:
 
     # Reset cache
-    x = torch.zeros(1, 1, 2**14).to(device)
-    _ = rave.decode(rave.encode(x))
+    if args.CACHED:
+        x = torch.zeros(1, 1, 2**14).to(device)
+        _ = rave.decode(rave.encode(x))
 
     audio_name = path.splitext(path.basename(audio))[0]
     audios.set_description(audio_name)
@@ -83,4 +84,5 @@ for audio in audios:
     y = y.reshape(-1).cpu().numpy()[:n_sample]
 
     # WRITE AUDIO
-    sf.write(path.join(args.OUT, f"{audio_name}_reconstruction.wav"), y, sr)
+    cachestr = "cached" if args.CACHED else "uncached"
+    sf.write(path.join(args.OUT, f"{audio_name}_reconstruction_{cachestr}.wav"), y, sr)
