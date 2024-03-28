@@ -63,6 +63,8 @@ makedirs(args.OUT, exist_ok=True)
 for audio in audios:
 
     # Reset cache
+    # TODO: Would it be better to directly set the cache initialized 
+    # flag to false in all layers?
     if args.CACHED:
         x = torch.zeros(1, 1, 2**14).to(device)
         _ = rave.decode(rave.encode(x))

@@ -61,8 +61,9 @@ if __name__ == "__main__":
         if idx not in eval_map:
             eval_map[idx] = {}
         
-        if len(parts) == 3:
-            eval_map[idx]["original"] = audio
+        if len(parts) == 4:
+            if parts[3] == "cached":
+                eval_map[idx]["original"] = audio
         else:
             eval_map[idx][f"{parts[3]}_{parts[4]}"] = audio
 
