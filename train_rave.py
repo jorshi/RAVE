@@ -19,10 +19,10 @@ from udls.transforms import Compose, RandomApply, Dequantize, RandomCrop
 if __name__ == "__main__":
 
     class args(Config):
-        groups = ["small", "large"]
+        groups = ["small", "large", "lhnas"]
 
         DATA_SIZE = 16
-        CAPACITY = setting(default=64, small=32, large=64)
+        CAPACITY = setting(default=64, small=32, large=64, lhnas=64)
         LATENT_SIZE = 128
         BIAS = True
         NO_LATENCY = False
@@ -48,7 +48,7 @@ if __name__ == "__main__":
         D_MULTIPLIER = 4
         D_N_LAYERS = 4
 
-        WARMUP = setting(default=1000000, small=1000000, large=3000000)
+        WARMUP = setting(default=1000000, small=1000000, large=3000000, lhnas=1000000)
         MODE = "hinge"
         CKPT = None
 
@@ -56,7 +56,7 @@ if __name__ == "__main__":
         WAV = None
         SR = 48000
         N_SIGNAL = 65536
-        MAX_STEPS = setting(default=3000000, small=3000000, large=6000000)
+        MAX_STEPS = setting(default=3000000, small=3000000, large=6000000, lhnas=3000000)
         VAL_EVERY = 10000
 
         BATCH = 8
