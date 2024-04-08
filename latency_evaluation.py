@@ -32,8 +32,9 @@ class LatencyModelWrapper(NeuralLatencyModelWrapper):
         """
         # Reset the internal cache of the model by passing zeros through the model
         # TODO: can we directly update the cache and would that be better?
-        x = torch.zeros(1, 1, self.samplerate() * 2, device=self.current_device())
-        self.forward(x)
+        with torch.no_grad():
+            x = torch.zeros(1, 1, self.samplerate() * 2, device=self.current_device())
+            self.forward(x)
 
     def samplerate(self) -> int:
         """
@@ -80,6 +81,9 @@ def main(arguments):
     parser.add_argument(
         "model_path", help="Path to model checkpoint and config", type=str
     )
+    parser.add_argument(
+        "name", help="Name of the eval run", type=str
+    )
     parser.add_argument("--stream", help="Simulate streaming mode", action="store_true")
     parser.add_argument(
         "--gpu", help="Chunk size for streaming mode", type=int, default=-1
@@ -96,7 +100,6 @@ def main(arguments):
     # device
     if args.gpu >= 0:
         device = torch.device("cuda:%d" % args.gpu)
-        model = model.to(device)
     else:
         device = torch.device("cpu")
 
@@ -104,7 +107,7 @@ def main(arguments):
     model.to(device)
 
     # Create the evaluator
-    evaluator = NeuralLatencyEvaluator(model)
+    evaluator = NeuralLatencyEvaluator(model, args.name)
     evaluator.evaluate()
 
 
